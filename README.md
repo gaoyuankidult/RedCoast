@@ -1,6 +1,5 @@
-# RedCoast
-> RedCoast is a project aiming at developing a supportive stategy on pepper robot. 
-* At first stage, the project tries to build a exp3 algorithm on pepper robot.
+# Product Name
+> Short blurb about what your product does.
 
 [![NPM Version][npm-image]][npm-url]
 [![Build Status][travis-image]][travis-url]

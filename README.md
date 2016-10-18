@@ -1,5 +1,5 @@
-# Product Name
-> Short blurb about what your product does.
+# RedCoast
+> RedCoast is a research project that focuses on implementing and testing (social) robot learning algorithms. At current stage it is a personal repo.
 
 [![NPM Version][npm-image]][npm-url]
 [![Build Status][travis-image]][travis-url]

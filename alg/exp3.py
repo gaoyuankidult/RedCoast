@@ -28,7 +28,7 @@ class Exp3(object):
         self.p = (1 - self.gamma) * self.W / self.W.sum() + self.gamma / self.K
         action = np.random.choice(xrange(self.K),p=self.p)
         reward = self.exp.rfun(action)
-        assert reward is not None, "Reward received from experiment %s is None."%str(exp)
+        assert reward is not None, "Reward received from experiment %s is None."%str(self.exp)
         reward_hat = reward/self.p[action]
         self.W[action] = self.W[action] * np.exp(self.gamma * reward_hat / self.K)
 
@@ -38,45 +38,3 @@ class Exp3(object):
             if self.debug == 1:
                 self.log = np.vstack((self.log, self.p))
 
-
-class Experiment(object):
-    """Implementation of Experiment class.
-
-    """
-
-    def __init__(self):
-        pass
-
-    @staticmethod
-    def rfun(action):
-        pass
-
-
-class StaticExp(Experiment):
-    """ implementation of a Simple Experiment with static reward function.
-
-    """
-
-    def __init__(self):
-        super(StaticExp, self).__init__()
-
-    @staticmethod
-    def rfun(action):
-        if action == 1:
-            return 3
-        elif action == 2:
-            return 2
-        else:
-            return 0
-
-if __name__ == '__main__':
-    exp = StaticExp()
-    alg = Exp3(5, 0.1, exp, debug=1)
-    iter = 1000
-    alg.run(iter)
-    for i in xrange(alg.K):
-        plt.plot(xrange(iter+1), alg.log[:,i], label="Action %d" % i)
-    plt.ylabel("Iteration Number")
-    plt.xlabel("Exploration Rate")
-    plt.legend()
-    plt.show()

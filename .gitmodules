@@ -1,0 +1,3 @@
+[submodule "giraffe"]
+	path = giraffe
+	url = git@github.com:imthexie/giraffe.git

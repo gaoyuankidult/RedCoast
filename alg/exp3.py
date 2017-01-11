@@ -44,4 +44,3 @@ class Exp3(object):
                 #plt.xlabel("Exploration Rate")
                 #plt.legend()
                 #plt.savefig("exp3_algorithm.png")
-

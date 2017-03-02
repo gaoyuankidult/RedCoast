@@ -1,0 +1,15 @@
+topic:~introduction()
+language:enu
+
+proposal: Now I will introduce the game we will learn today. It is called nonogram. May I continue, $name?
+
+u(hello): Hi, Welcome to today's experiment. What is your name ?
+    u1(my name is _*): Nice to meet you $1 $name = $1. ^nextProposal
+        u2(~yes) There are three rules in this game. Firstly, each cell must be colored (black) or left empty.
+
+        u2(~no) I will wait then.
+
+    u1(skip): ok
+
+
+

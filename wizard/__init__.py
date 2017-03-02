@@ -1,0 +1,1 @@
+from wizard_ui import Ui_MainWindow

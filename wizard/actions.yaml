@@ -1,6 +1,18 @@
----
-- Action 1
-- Action 2
-- Action 1
-- Action 3
-- Action 1
+excute_implicit: 0
+before_action: 2
+action_time: 5
+after_action: 2
+implicit_actions:
+  - Action 1
+  - Action 2
+  - Action 1
+  - Action 3
+  - Action 1
+
+explicit_actions:
+  - Action 0
+  - Action 1
+  - Action 2
+  - Action 3
+  - Action 4
+  - Action 5

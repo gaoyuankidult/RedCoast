@@ -1,0 +1,28 @@
+topic: ~interaction()
+language: enu
+
+concept:(speed_slow) \rspd=80\ \vct=100\
+concept:(normal) \rspd=100\ \vct=100\
+concept:(wait) ["ok" "I will wait."]
+concept:(yes) [yes "all right" sure "why not" ok certainly "very well" yep yea definitely amen]
+concept:(no) [no nope "don't want" "no way" never "not at all"]
+concept:(how) ["how are you" howdy "what's up" "how do you feel"]
+concept:(happy) [ok fine great happy blessed "all right" glad "not bad"]
+concept:(sad) [sad miserable bad unhappy tired]
+concept:(repeat) [repeat understand]
+concept:(thx) ["thank you" thanks gracias "much obliged" merci]
+concept:(hello) [hello hi hey "good morning" greetings]
+concept:(bye) [bye goodbye "bye bye" "tata" "see you" adios cheerio "so long" farewell "have a nice day"]
+
+
+proposal: %start I just noticed you made two same mistakes, do you know all the rules already ?
+    u1:(~yes) ^gotoReactivate(strategies)
+    u1:(~no) Maybe we can go through the rules of game again?
+        u2:(~yes) Ok. ^gotoReactivate(strategies)
+        u2:(~no) Alright then. Tell me when you need me.
+
+
+proposal: %strategies I have several basic strategies for you.
+
+
+u:(e:RightBumperPressed)  This event indicants natural policy gradient algorithm has been registered. ^gotoReactivate(start)

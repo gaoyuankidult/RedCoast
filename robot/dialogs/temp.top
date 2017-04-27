@@ -1,0 +1,22 @@
+topic: ~interaction()
+language: enu
+
+include:lexicon_enu.top
+
+concept:(speed_slow) \rspd=80\ \vct=100\
+concept:(normal) \rspd=100\ \vct=100\
+concept:(wait) ["ok" "I will wait."]
+
+u:(~hello) ^start(animations/Stand/Gestures/Hey_1) ~hello ^wait(animations/Stand/Gestures/Hey_1)
+
+proposal: %start I just noticed you made two same mistakes, do you know all rules already ?
+    u1:(~yes) ^gotoReactivate(strategies)
+    u1:(~no) Maybe we can go through the rules of game again?
+        u2:(~yes) Ok. ^gotoReactivate(strategies)
+        u2:(~no) Alright then. Tell me when you need me.
+
+
+proposal: %strategies I have several basic strategies for you.
+
+
+u:(e:RightBumperPressed) My right foot bumped into something! ^gotoReactivate(start)

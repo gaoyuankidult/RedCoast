@@ -1,7 +1,11 @@
 from strategy import Strategy
 
-
 from experiments import RobotChessExperiment
 from experiments import RobotNanogramExperiment
 
+from robot_methods import RobotDialogMixin
 from robot_methods import RobotSpeechMixin
+from robot_methods import RobotConnectionMixin
+from robot_methods import RobotGesturesMixin
+from robot_methods import RobotVisionMixin
+from robot_methods import RobotPostureMixin

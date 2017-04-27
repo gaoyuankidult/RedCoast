@@ -3,19 +3,28 @@ from naoqi import ALProxy
 import motion
 
 import threading
-import time
-import almath
+import zmq
 
 from alg import Exp3
 
-import scp
-
 from robot import Strategy
 from robot import RobotNanogramExperiment
-from robot import RobotSpeechMixin
-from robot import RobotDialogMixedin
 
-class Robot(threading.Thread, RobotSpeechMixin, RobotDialogMixedin):
+from robot import RobotSpeechMixin
+from robot import RobotDialogMixin  # RobotSpeechMixedin depends on RobotConnectionMixedin
+from robot import RobotConnectionMixin
+from robot import RobotGesturesMixin
+from robot import RobotVisionMixin
+from robot import RobotPostureMixin
+
+
+class Robot(threading.Thread,
+            RobotSpeechMixin,
+            RobotDialogMixin,
+            RobotConnectionMixin,
+            RobotGesturesMixin,
+            RobotVisionMixin,
+            RobotPostureMixin):
 
     def __init__(self, ip, port, joystick_id):
 
@@ -36,10 +45,15 @@ class Robot(threading.Thread, RobotSpeechMixin, RobotDialogMixedin):
         self.ip = ip
         self.port = port
         self.joystick_id = joystick_id
+
+        self.memory = ALProxy("ALMemory", self.ip, self.port)
+
         self.speech_pitch = 100
         self.speech_speed = 100
-
         self.speech = ALProxy("ALAnimatedSpeech", self.ip, self.port)
+
+        self.sound = ALProxy("ALSoundDetection", self.ip, self.port)
+        self.sound.setParameter("Sensitivity", 0.0)
 
         self.dialog = ALProxy("ALDialog", self.ip, self.port)
         self.focus_topic = None
@@ -51,6 +65,7 @@ class Robot(threading.Thread, RobotSpeechMixin, RobotDialogMixedin):
         self.experiment = RobotNanogramExperiment(robot=self)
         self.algorithm = Exp3(4, 0.1, self.experiment, debug=1)
 
+
         context = zmq.Context()
         self.socket = context.socket(zmq.REP)
         self.socket.bind("tcp://*:%s" % "5556")
@@ -60,14 +75,17 @@ class Robot(threading.Thread, RobotSpeechMixin, RobotDialogMixedin):
         self.algorithm.run(niter)
 
 
-import sys
-sys.path.insert(0, "nonogram/gamelib")
 
-import pygame
-import main
 
 if __name__ == "__main__":
-    IP = "130.238.150.236"
+    import sys
+
+    sys.path.insert(0, "nonogram/gamelib")
+
+    import pygame
+    import main
+
+    IP = "130.238.17.48"
     robot = Robot(IP, 9559, 0)
     robot.start()
 

@@ -27,11 +27,14 @@ from constants import *
 from pygame.locals import *
 import pygame
 
+import copy
+
 class Tablero:
     ''' '''
     def __init__(self, num_fil, num_col, linea, archivo):
         ''' '''
         self.sol = []
+        self.conf = []
         lista = []
         cadena = ''
         abre = aux = False
@@ -40,6 +43,7 @@ class Tablero:
         
         self.archivo = open(os.path.join('nonogram/size', archivo))
         for line in self.archivo:
+            self.conf.append(line)
             if count == linea:
                 for e in line:
                     if e == "[":
@@ -113,11 +117,55 @@ class Tablero:
             sum = 0
             list = []
 
+
+        print self.listoflists
+        print self.listoflists2
+        # communication method
         context = zmq.Context()
         self.socket = context.socket(zmq.REQ)
         self.socket.connect("tcp://localhost:%s" % "5556")
         self.communicate = True
-        
+
+        if self.communicate:
+            # send size information
+            self.socket.send("%d, %d" %(num_fil,num_col))
+            print self.socket.recv()
+
+            # send game configurations
+            self.socket.send_json([self.listoflists, self.listoflists2])  # row columns information
+            print self.socket.recv()
+
+        #solver.read_board()
+
+    def check_and_confirm(self, message):
+        """
+        This methods comfirm information received from nonogram process.
+        :param message: message thats needs to be received from nonogram
+        :param func:  function that needs to be excuted before comformation
+        :return: true
+        """
+        received = self.socket.recv()
+        if message == received:
+            self.socket.send(message + "_confirmed")
+        else:
+            raise Exception("The process expects to receive message %s, however, message: %s is received." % (message, received))
+        return True
+
+    def check_confirm(self, message):
+        """
+        This methods comfirm information received from nonogram process.
+        :param message: message thats needs to be received from nonogram
+        :param func:  function that needs to be excuted before comformation
+        :return: true
+        """
+        received = self.socket.recv()
+        if message+"_confirmed" == received:
+            pass
+        else:
+            raise Exception("The process expects to receive message %s, however, message: %s is received." %
+                            (message + "_confirmed", received))
+        return True
+
     def reset(self):
         ''' '''
         self.celdas = self.crear_celdas(self.filas, self.columnas, VACIO)
@@ -198,33 +246,54 @@ class Tablero:
     def actualizar(self):
         ''' '''
         boton = pygame.mouse.get_pressed()
-        posicionx = posiciony = -1
+        positionx = positiony = -1
         actualizar = False
-        
+
+        previous_board = copy.deepcopy(self.celdas)
+
         if boton[0] or boton[2]:
             x, y = pygame.mouse.get_pos() 
-            posicionx = (x / self.tipos[0].get_width()) - 19 
-            posiciony = (y / self.tipos[0].get_width()) - 9
+            positionx = (x / self.tipos[0].get_width()) - 19
+            positiony = (y / self.tipos[0].get_width()) - 9
 
-            # send positions to robot.
-            if self.communicate:
-                self.socket.send("%d,%d" % (posicionx, posiciony))
-                self.socket.recv()
 
-            if (posicionx < self.columnas and posicionx >= 0) and (posiciony < self.filas and posiciony >= 0):
-                if self.celdas[posiciony][posicionx] == RELLENO or self.celdas[posiciony][posicionx] == EQUIS:
-                    self.celdas[posiciony][posicionx] = VACIO
+            if (positionx < self.columnas and positionx >= 0) and (positiony < self.filas and positiony >= 0):
+                if self.celdas[positiony][positionx] == RELLENO or self.celdas[positiony][positionx] == EQUIS:
+                    self.celdas[positiony][positionx] = VACIO
                 else:
                     if boton[0]:
-                        self.celdas[posiciony][posicionx] = RELLENO
+                        self.celdas[positiony][positionx] = RELLENO
                     if boton[2]:
-                        self.celdas[posiciony][posicionx] = EQUIS
+                        self.celdas[positiony][positionx] = EQUIS
                 actualizar = True
             else:
-                posicionx = posiciony = -1
-         
+                positionx = positiony = -1
+
+            # send information to robot.
+
+            if (positionx < self.columnas and positionx >= 0) and (positiony < self.filas and positiony >= 0): # if the position is not out of boundary
+                if self.celdas[positiony][positionx] == RELLENO or self.celdas[positiony][positionx] == EQUIS: # after selection, if the position is filled in with block or cross
+                    if boton[0]:
+                        click = 0
+                    if boton[2]:
+                        click = 1
+                else:
+                    if boton[0]:
+                        click = 0
+                    if boton[2]:
+                        click = 1
+
+                # send current board of the game
+                self.socket.send_json([self.sol, self.celdas, previous_board])
+                print self.socket.recv()
+
+                # send position and click information
+                self.socket.send_json([positionx, positiony, click])
+                print self.socket.recv()
+
+
         return actualizar
-    
+
     def analisis(self):
         ''' '''        
         res = True
@@ -233,9 +302,12 @@ class Tablero:
             for j in xrange(self.columnas):
                 if (self.sol[i][j] == self.celdas[i][j] or self.sol[i][j] + 2 == self.celdas[i][j]) and res:
                     res = True
+
                 else:
                     res = False
-        
+        if res == True:
+            self.socket.send("game_finished")
+            print self.socket.recv()
         return res
     
 class Tipo:

@@ -47,6 +47,7 @@ class WizardUI(QtGui.QMainWindow):
 
         self.actions_map = {"Action 1": [robot.say, ["Hello - welcome to our lab"]],
                             "Action 2": [robot.say, ["My name is Pepper, and I will be helping you today to build a LEGO robot."]],
+                            #"Action 2": [robot.say, ["Great! Let us continue, I will be helping you today to build a LEGO robot."]],
                             "Action 3": [robot.say, ["Your task is fun! All you have to do is look at the LEGO manual and follow the instructions"]],
                             "Action 4": [robot.say, ["There are several instructions that are missing, and I will be helping you with them through my screen"]],
                             "Action 5": [say_and_raise, [["Look at my screen. This is what you have to build"], ["PicNumber", 99]]],
@@ -85,21 +86,21 @@ class WizardUI(QtGui.QMainWindow):
 
 
                             # After milestone 4
-                            "Attractor 7": [robot.memory.raiseEvent, ["HighFiveToBeResponded", 4]],
+                            "Attractor 7": [robot.memory.raiseEvent, ["PowerHandToBeResponsed", 3]],
                             "Attractor 8": [robot.memory.raiseEvent, ["ButtonToBePressed", 5]],
 
                             # After milestone 5
-                            "Attractor 9": [robot.memory.raiseEvent, ["PowerHandToBeResponsed", 3]],
-                            "Attractor 10": [robot.memory.raiseEvent, ["ButtonToBePressed", 6]],
+                            #"Attractor 9": [robot.memory.raiseEvent, ["PowerHandToBeResponsed", 3]],
+                            #"Attractor 10": [robot.memory.raiseEvent, ["ButtonToBePressed", 6]],
 
 
                             # After milestone 6
-                            "Attractor 11": [robot.memory.raiseEvent, ["PowerHandToBeResponsed", 4]],
-                            "Attractor 12": [robot.memory.raiseEvent, ["ButtonToBePressed", 6]],
+                            #"Attractor 11": [robot.memory.raiseEvent, ["PowerHandToBeResponsed", 4]],
+                            #"Attractor 12": [robot.memory.raiseEvent, ["ButtonToBePressed", 6]],
 
                             # After milestone 7
-                            "Attractor 13": [robot.memory.raiseEvent, ["HighFiveToBeResponded", 5]],
-                            "Attractor 14": [robot.memory.raiseEvent, ["ButtonToBePressed", 7]],
+                            #"Attractor 13": [robot.memory.raiseEvent, ["HighFiveToBeResponded", 5]],
+                            #"Attractor 14": [robot.memory.raiseEvent, ["ButtonToBePressed", 7]],
 
 
 
@@ -122,6 +123,74 @@ class WizardUI(QtGui.QMainWindow):
         self.ui.stimuTwoFeedback.clicked.connect(self.training_four)
         self.started = False
 
+
+        self.ui.buttonPage3.clicked.connect(self.page3)
+        self.ui.buttonPage6.clicked.connect(self.page6)
+        self.ui.buttonPage10 .clicked.connect(self.page10)
+        self.ui.buttonPage14.clicked.connect(self.page14)
+        self.ui.buttonPage18.clicked.connect(self.page18)
+
+        self.ui.trainIntro1.clicked.connect(self.train_intro_1)
+        self.ui.trainIntro2.clicked.connect(self.train_intro_2)
+        self.ui.trainIntro3.clicked.connect(self.train_intro_3)
+        self.ui.trainIntro4.clicked.connect(self.train_intro_4)
+        self.ui.trainIntroAgain.clicked.connect(self.train_intro_again)
+
+
+        self.ui.responseButton1.clicked.connect(self.response1)
+        self.ui.responseButton2.clicked.connect(self.response2)
+        self.ui.responseButton3.clicked.connect(self.response3)
+        self.ui.responseButton4.clicked.connect(self.response4)
+
+        self.ui.playPushButton.clicked.connect(self.pushbutton)
+
+        self.ui.coverButton1.clicked.connect(self.cover1)
+        self.ui.coverButton2.clicked.connect(self.cover2)
+        self.ui.coverButton3.clicked.connect(self.cover3)
+        self.ui.coverButton4.clicked.connect(self.cover4)
+        self.ui.coverButton5.clicked.connect(self.cover5)
+        self.ui.coverButton6.clicked.connect(self.cover6)
+
+        self.ui.coverButton3_2.clicked.connect(self.playtext4)
+
+    def cover1(self):
+        self.robot.say("I think it is a nice day today !")
+    def cover2(self):
+        self.robot.say("About LEGO, more than 400 billion Lego bricks have been produced since 1958. Can you believe it?")
+    def cover3(self):
+        self.robot.say("Since we are playing with LEGO, did you know that LEGO is very very popular amongst adults population")
+    def cover4(self):
+        self.robot.say("I love LEGO !")
+    def cover5(self):
+        self.robot.say("Its going to be sunny tomorrow, I love it.")
+    def cover6(self):
+        self.robot.say("I don't like rain, even though I don't go outside.")
+
+
+    def train_intro_1(self):
+        self.robot.say("Hello, nice to meet you.  !")
+
+    def train_intro_2(self):
+        self.robot.say("Today we are going to work together to finish a task.")
+
+    def train_intro_3(self):
+        self.robot.say("I will help you sometimes, and sometimes I need your help and encouragement.  ")
+
+    def train_intro_4(self):
+        self.robot.say("Some of my interactions are like this:")
+
+    def train_intro_again(self):
+        self.robot.say("Would you like to try the actions again? ")
+
+
+    def playtext4(self):
+        text = self.ui.textEdit.toPlainText()
+        self.robot.say(str(text))
+
+
+    def pushbutton(self):
+        self.robot.say("No problem !")
+
     def screen_off(self):
         self.robot.memory.raiseEvent("PicNumber", 0)
 
@@ -142,6 +211,43 @@ class WizardUI(QtGui.QMainWindow):
     def training_four(self):
         func, args = self.actions_map["train 4"]
         func(*args)
+
+    def response1(self):
+        self.robot.say("Thanks a lot !")
+
+    def response2(self):
+        self.robot.say("Great !")
+
+    def response3(self):
+        self.robot.say("Cool !")
+
+    def response4(self):
+        self.robot.say("Nice !")
+
+    def page3(self):
+        self.robot.memory.raiseEvent("PicNumber", 1)
+
+    def page6(self):
+        self.robot.memory.raiseEvent("PicNumber", 2)
+
+    def page10(self):
+        self.robot.memory.raiseEvent("PicNumber", 3)
+
+    def page14(self):
+        self.robot.memory.raiseEvent("PicNumber", 4)
+
+    def page18(self):
+        self.robot.memory.raiseEvent("PicNumber", 5)
+
+    def page21(self):
+        self.robot.memory.raiseEvent("PicNumber", 6)
+
+    def page24(self):
+        self.robot.memory.raiseEvent("PicNumber", 7)
+
+
+
+
 
     def error(self, message):
         messageBox = QtGui.QMessageBox()
@@ -210,7 +316,7 @@ class WizardUI(QtGui.QMainWindow):
                     action_type = self.explicit_actions[self.no_explicit_action]
                     print action_type
 
-                    if action_type.startswith("Milestone"):
+                    if action_type.startswith("Milestone") and int(action_type.split()[-1]) is not 5:
                         func, args = self.actions_map[self.explicit_actions[self.no_explicit_action]]
                         func(*args)
                         self.no_explicit_action += 1
@@ -256,7 +362,7 @@ class WizardUI(QtGui.QMainWindow):
 
                         if self.no_explicit_action == self.max_actions:
                             self.ui.pushButton.setText("Stopped.")
-                            with open('/media/alex/22E67196E6716AC5/Research/02-03-2017-Probe/Data/log.yaml', 'w') as outfile:
+                            with open('/media/Research/02-03-2017-Probe/Data/log.yaml', 'w') as outfile:
                                 yaml.dump(self.log, outfile, default_flow_style=False)
 
                 else:

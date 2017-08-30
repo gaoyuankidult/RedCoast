@@ -223,10 +223,10 @@ class NanogramProcess(RobotExperiment):
         self.selection = self.action_types.NOTSELECTED
 
         # Start the instruction process
-        self.instruct()
+        self.instruct_begin()
 
 
-    def instruct(self):
+    def instruct_begin(self):
 
         """
         This official description of nonogram is adopted from paper "An efficient algorithm for solving nonnograme"[1]
@@ -234,16 +234,13 @@ class NanogramProcess(RobotExperiment):
         [1] http://debut.cis.nctu.edu.tw/Publications/pdfs/J54.pdf
         :return:
         """
-        #self.robot.say("Now ")
-        #self.robot.say("The positive integers in the top of a column or left of a row stand for the lengths of black "
-        #               "runs in the column or row respectively. The goal is to paint cells to form a picture that "
-        #               "satisfies the following three constraints")
+        self.robot.memory.raiseEvent("InstructBegin", 1)
 
-        #self.robot.say("Firstly, each cell must be colored (black) or left empty.")
-        #self.robot.say("Secondly, If a row or column has k numbers: s1,s2,...,sk , " "then it must contain k black runs - the first."
-        #               "black run with length s1, the second black run with length s2, and so on.")
-        #self.robot.say(" The last rule is, there should be at least one empty cell between two consecutive black runs.")
-        #self.robot.start_dialog(["dialogs/introduction.top"])
+        return
+
+    def instruct_game(self):
+        self.robot.memory.raiseEvent("InstructBegin", 1)
+
         return
 
     def excute_action(self, behaviour_class, actions):
@@ -254,7 +251,6 @@ class NanogramProcess(RobotExperiment):
         :return:
         """
         self.robot.say(actions[behaviour_class])
-
 
     def strategy_evaluation(self, behaviour_class):
         """
@@ -348,7 +344,7 @@ class NanogramProcess(RobotExperiment):
 
             rule_two_n = 4
             limit = 1.0
-            print clicks
+
             if len(positions) >= rule_two_n: # in case we have at least n points
 
                 t1 = times[-rule_two_n:]
@@ -384,18 +380,18 @@ class NanogramProcess(RobotExperiment):
         # Propose an action.
         # a. appraisal, for example, that was a right decision
         # b.
-        print clicks
+
         if len(positions) >= rule_two_n:  # in case we have at least n points
 
             t1 = times[-rule_two_n:]
             t2 = deepcopy(times[-rule_two_n:])
             shift_left(t2, rule_two_n - 1)
-        if all([c < limit for c in map(operator.sub, t2, t1)[0:rule_two_n]]):
-            actions = ["Do you want to know it is correct or not?",
-                       "As a reward, I can show you one corrent cell on the board.",
-                       "and That really a good sign.",
-                       "Isn't?"]
-            actions = ["That took you some effort. " + action for action in actions]
+            if all([c < limit for c in map(operator.sub, t2, t1)[0:rule_two_n]]):
+                actions = ["Do you want to know it is correct or not?",
+                           "As a reward, I can show you one corrent cell on the board.",
+                           "and That really a good sign.",
+                           "Isn't?"]
+                actions = ["That took you some effort. " + action for action in actions]
 
 
         # Rule two 1): user made made continuous good moves then stop
@@ -602,7 +598,7 @@ class NanogramProcess(RobotExperiment):
 
         except Exception:
             print sys.exc_info()
-
+            print received
             # received game finished confirmation
             if received.startswith("game_finished"):
                 self.robot.socket.send("game_finished_confirmed")
@@ -629,11 +625,12 @@ class RobotNanogramExperiment(RobotExperiment):
         self.process = NanogramProcess(robot)
 
 
+
     def rfun(self, action):
         self.out = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
-        self.robot.load_topic("dialogs/interaction.top")
-        self.robot.dialog.subscribe('ExperimentModule')
+        #self.robot.load_topic("dialogs/interaction.top")
+        #self.robot.dialog.subscribe('ExperimentModule')
 
 
         # receive size information

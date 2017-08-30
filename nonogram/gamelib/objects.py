@@ -128,6 +128,7 @@ class Tablero:
 
         if self.communicate:
             # send size information
+
             self.socket.send("%d, %d" %(num_fil,num_col))
             print self.socket.recv()
 

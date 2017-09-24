@@ -85,7 +85,7 @@ if __name__ == "__main__":
     import pygame
     import main
 
-    IP = "130.238.17.48"
+    IP = "130.238.17.60"
     robot = Robot(IP, 9559, 0)
     robot.start()
 

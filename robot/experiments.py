@@ -195,30 +195,22 @@ class NanogramProcess(RobotExperiment):
                                         "clicks":[]}}
 
         # Set global parameters to track infomation of whether each rule is excuted or not
-        self.behaviour_excuted_rule1 = False
-        self.behaviour_excuted_rule2 = False
+        self.forbid_rule1 = False
+        self.forbid_rule2 = False
+        self.forbid_rule3 = False
 
-        self.domain_excuted_rule1 = False
-        self.domain_excuted_rule2 = False
-
-        # Set global parameters to track
-        self.behaviour_selected_rule1 = False
-        self.behaviour_selected_rule2 = False
-
-        self.domain_selected_rule1 = False
-        self.domain_selected_rule2 = False
+        self.rule1_selected = False
+        self.rule2_selected = False
+        self.rule3_selected = False
 
         # Set final selected rule
 
         class ActionType():
             NOTSELECTED = 0
-            BRULE1 = 1    # behaviour level rule 1
-            BRULE2 = 2
-            BRULE3 = 3
+            RULE1 = 1    # behaviour level rule 1
+            RULE2 = 2
+            RULE3 = 3
 
-            DRULE1 = 51   # domain level rule 1
-            DRULE2 = 52
-            DRULE3 = 52
         self.action_types = ActionType()
         self.selection = self.action_types.NOTSELECTED
 
@@ -288,10 +280,7 @@ class NanogramProcess(RobotExperiment):
         clicks = self.info["game"]["clicks"]
         behaviour_times = self.info["game"]["behaviour_times"]
 
-        actions = None
-
-
-
+        actions = None # variable for final actions
 
         # Reinforcement learning on each rule ?
 
@@ -301,66 +290,75 @@ class NanogramProcess(RobotExperiment):
         # Domain knowledge level can decide whether user needs Appraisal support.
         # Long term analysis can decide whether user needs emotional support.
 
-        # Behaviour level
-
-        # Rule one
+        # Rule one & Rule two
         # make a time t to be associated with difficulty of the game and for $t_1$ > $t$
         # currently, we define difficulty to be $n^2 + 1$ $t$ is defined to be $n^2 + 1 \times 0.1s$
+        
+        def set_t(size):
+            """ set a time reference to compare with"""
+            w, h = size 
+            t1 = (w * h + 1) * 0.2
+            return t1
 
+        # forbid rule1 in several situations
+        count = len(positions)
+        t1 = set_t(size)
+        if (not self.forbid_rule1) and (not self.forbid_rule2):
 
-        if not self.behaviour_excuted_rule1:
-            count = len(positions)
+            # count > 1:  # ensure that this does not trigger for the first behaviour
+            # behaviour_times[-1] > times[-2]:          # ensure this does not trigger after another behaviour
+            # times[-1] - times[-2] > t1  # condition for rule1
+            self.waited_long = ((count > 1) and (behaviour_times[-1] > times[-2]) and (times[-1] - times[-2] > t1))
 
-            if count > 1:  # ensure that this does not trigger for the first behaviour
-                if behaviour_times[-1] > times[-2]:          # ensure this does not trigger after another behaviour
-                    w, h = size
-                    t1 = (w * h + 1) * 0.2
-                    if times[-1] - times[-2] > t1:
-                        actions = ["Do you need to hear some information about this game?",
-                                   "If you feel puzzled, I can complete next move for you.",
-                                   "But please don't worry, this game is hard this time.",
-                                   "But please don't worry, I am here for you."]
-
-                        actions = ["Your last action took too long. " + action for action in actions]
-                    self.selected_rule1 = True
-                    self.action_type = self.action_types.BRULE1
-
+        # set rule1 if all situations satisfied
+        if self.waited_long:
+                actions = ["Do you need to hear some information about this game?",
+                           "If you feel puzzled, I can complete next move for you.",
+                           "But please don't worry, this game is hard this time.",
+                           "But please don't worry, I am here for you."]
+                
+                actions = ["Your last action took too long. is there any thing that troubles you?" + action for action in actions]
+                self.rule1 = True
+                self.action_type = self.action_types.RULE1
 
         # Rule two: several selections are cancelled continuously.
         # Propose, should this model for possion distribution ? time 2 - time 1 expect on average 2 cancellation ?
         # if user gives a negative interference, then the expected value is increased.
 
         # If there are at least three positive discoveries in three actions, then an action is excuted.
-        if not self.behaviour_excuted_rule2:
-            import operator
-            from copy import deepcopy
+        def set_brule2():
+            if not self.behaviour_excuted_rule2:
+                import operator
+                from copy import deepcopy
 
-            def shift_left(lst, n):
-                if n < 0:
-                    raise ValueError('n must be a positive integer')
-                if n > 0:
-                    lst.insert(0, lst.pop(-1))  # shift one place
-                    shift_left(lst, n - 1)  # repeat
+                def shift_left(lst, n):
+                    if n < 0:
+                        raise ValueError('n must be a positive integer')
+                    if n > 0:
+                        lst.insert(0, lst.pop(-1))  # shift one place
+                        shift_left(lst, n - 1)  # repeat
 
-            rule_two_n = 4
-            limit = 1.0
+                rule_two_n = 4
+                limit = 1.0
 
-            if len(positions) >= rule_two_n: # in case we have at least n points
+                if len(positions) >= rule_two_n: # in case we have at least n points
 
-                t1 = times[-rule_two_n:]
-                t2 = deepcopy(times[-rule_two_n:])
-                shift_left(t2, rule_two_n-1)
+                    t1 = times[-rule_two_n:]
+                    t2 = deepcopy(times[-rule_two_n:])
+                    shift_left(t2, rule_two_n-1)
 
 
 
-                if all([c < limit for c in map(operator.sub, t2, t1)[0:rule_two_n]]) :
-                    actions = ["Do you need more information about this game?",
-                               "Do feel difficulties completing this task, I can help you by filling this row.",
-                               "It is actually a good idea, trying out might be important for thinking. isn't it?",
-                               "If you have problems, I can help you with this one."]
-                    actions = ["That was fast! were you just trying out different moves? " + action for action in actions]
-            self.selected_rule2 = True
-            self.action_type = self.action_types.BRULE2
+                    if all([c < limit for c in map(operator.sub, t2, t1)[0:rule_two_n]]) :
+                        actions = ["Do you need more information about this game?",
+                                   "Do feel difficulties completing this task, I can help you by filling this row.",
+                                   "It is actually a good idea, trying out might be important for thinking. isn't it?",
+                                   "If you have problems, I can help you with this one."]
+                        actions = ["That was fast! were you just trying out different moves? " + action for action in actions]
+                self.selected_rule2 = True
+                self.action_type = self.action_types.BRULE2
+
+        set_brule2()
 
         # If the possibility of poisson distribution does triger the proposal, the behaviours of this condition is
         # modeled using a multi-armed bandit algorithm ?
@@ -379,7 +377,7 @@ class NanogramProcess(RobotExperiment):
         # Rule one: user made a good moves after long time and it is a good one
         # Propose an action.
         # a. appraisal, for example, that was a right decision
-        # b.
+        
 
         if len(positions) >= rule_two_n:  # in case we have at least n points
 
@@ -458,10 +456,6 @@ class NanogramProcess(RobotExperiment):
 
         if actions is not None:
             self.excute_action(behaviour_class, actions)
-
-
-
-
 
         return False
 

@@ -309,13 +309,14 @@ class NanogramProcess(RobotExperiment):
             # behaviour_times[-1] > times[-2]:          # ensure this does not trigger after another behaviour
             # times[-1] - times[-2] > t1  # condition for rule1
             self.waited_long = ((count > 1) and (behaviour_times[-1] > times[-2]) and (times[-1] - times[-2] > t1))
-
         # set rule1 if all situations satisfied
+        print waited_long
         if self.waited_long:
+        
                 actions = ["Do you need to hear some information about this game?",
                            "If you feel puzzled, I can complete next move for you.",
-                           "But please don't worry, this game is hard this time.",
-                           "But please don't worry, I am here for you."]
+                           "This game is hard this time.",
+                           "I am here for you."]
                 
                 actions = ["Your last action took too long. is there any thing that troubles you?" + action for action in actions]
                 self.rule1 = True
@@ -326,40 +327,40 @@ class NanogramProcess(RobotExperiment):
         # if user gives a negative interference, then the expected value is increased.
 
         # If there are at least three positive discoveries in three actions, then an action is excuted.
-        def set_brule2():
-            if not self.behaviour_excuted_rule2:
-                import operator
-                from copy import deepcopy
-
-                def shift_left(lst, n):
-                    if n < 0:
-                        raise ValueError('n must be a positive integer')
-                    if n > 0:
-                        lst.insert(0, lst.pop(-1))  # shift one place
-                        shift_left(lst, n - 1)  # repeat
-
-                rule_two_n = 4
-                limit = 1.0
-
-                if len(positions) >= rule_two_n: # in case we have at least n points
-
-                    t1 = times[-rule_two_n:]
-                    t2 = deepcopy(times[-rule_two_n:])
-                    shift_left(t2, rule_two_n-1)
-
-
-
-                    if all([c < limit for c in map(operator.sub, t2, t1)[0:rule_two_n]]) :
-                        actions = ["Do you need more information about this game?",
-                                   "Do feel difficulties completing this task, I can help you by filling this row.",
-                                   "It is actually a good idea, trying out might be important for thinking. isn't it?",
-                                   "If you have problems, I can help you with this one."]
-                        actions = ["That was fast! were you just trying out different moves? " + action for action in actions]
-                self.selected_rule2 = True
-                self.action_type = self.action_types.BRULE2
-
-        set_brule2()
-
+#        def set_brule2():
+#            if not self.behaviour_excuted_rule2:
+#                import operator
+#                from copy import deepcopy
+#
+#                def shift_left(lst, n):
+#                    if n < 0:
+#                        raise ValueError('n must be a positive integer')
+#                    if n > 0:
+#                        lst.insert(0, lst.pop(-1))  # shift one place
+#                        shift_left(lst, n - 1)  # repeat
+#
+#                rule_two_n = 4
+#                limit = 1.0
+#
+#                if len(positions) >= rule_two_n: # in case we have at least n points
+#
+#                    t1 = times[-rule_two_n:]
+#                    t2 = deepcopy(times[-rule_two_n:])
+#                    shift_left(t2, rule_two_n-1)
+#
+#
+#
+#                    if all([c < limit for c in map(operator.sub, t2, t1)[0:rule_two_n]]) :
+#                        actions = ["Do you need more information about this game?",
+#                                   "Do feel difficulties completing this task, I can help you by filling this row.",
+#                                   "It is actually a good idea, trying out might be important for thinking. isn't it?",
+#                                   "If you have problems, I can help you with this one."]
+#                        actions = ["That was fast! were you just trying out different moves? " + action for action in actions]
+#                self.selected_rule2 = True
+#                self.action_type = self.action_types.BRULE2
+#
+#        set_brule2()
+#
         # If the possibility of poisson distribution does triger the proposal, the behaviours of this condition is
         # modeled using a multi-armed bandit algorithm ?
         #
@@ -379,17 +380,17 @@ class NanogramProcess(RobotExperiment):
         # a. appraisal, for example, that was a right decision
         
 
-        if len(positions) >= rule_two_n:  # in case we have at least n points
-
-            t1 = times[-rule_two_n:]
-            t2 = deepcopy(times[-rule_two_n:])
-            shift_left(t2, rule_two_n - 1)
-            if all([c < limit for c in map(operator.sub, t2, t1)[0:rule_two_n]]):
-                actions = ["Do you want to know it is correct or not?",
-                           "As a reward, I can show you one corrent cell on the board.",
-                           "and That really a good sign.",
-                           "Isn't?"]
-                actions = ["That took you some effort. " + action for action in actions]
+#        if len(positions) >= rule_two_n:  # in case we have at least n points
+#
+#            t1 = times[-rule_two_n:]
+#            t2 = deepcopy(times[-rule_two_n:])
+#            shift_left(t2, rule_two_n - 1)
+#            if all([c < limit for c in map(operator.sub, t2, t1)[0:rule_two_n]]):
+#                actions = ["Do you want to know it is correct or not?",
+#                           "As a reward, I can show you one corrent cell on the board.",
+#                           "and That really a good sign.",
+#                           "Isn't?"]
+#                actions = ["That took you some effort. " + action for action in actions]
 
 
         # Rule two 1): user made made continuous good moves then stop
@@ -398,57 +399,57 @@ class NanogramProcess(RobotExperiment):
         # 1. cotinueous selection
         # 2. action two in behaviou level is activated
         # 3. the last action makes a row or column to be correct.
-        if not self.domain_excuted_rule2:
-            def compare(position, size, board, solution):
-                """
-                Given a position, this function compares the whether the row and the column of this position are the same as
-                solution's
-                :param solution:
-                :return:
-                """
-                w, h = size
-                x, y = position
-
-                check_row = True
-                for i in xrange(h):
-                    check_row = (board[x][i] == solution[x][i] and check_row)
-
-                check_cloumn = True
-                for j in xrange(w):
-                    check_cloumn = (board[j][y] == solution[j][y] and check_cloumn)
-
-                return check_cloumn, check_row
-
-            position = positions[-1]
-            column_complete, row_complete = compare(position, size,current_board, solution)
-            print column_complete, row_complete
-            if column_complete:
-
-                actions = ["Do you want to know it is correct or not?",
-                           "I can show you one correct answer on the board."
-                           "That is great !",
-                           "I can see that you are doing well."]
-                actions = ["It seems you completed a column. " + action for action in actions]
-
-            if row_complete:
-
-                actions = ["Do you want to know it is correct or not?",
-                           "I can show you one correct answer on the board.",
-                           "That is great ! ",
-                           "I can see that you are doing well."]
-                actions = ["You completed a row. " + action for action in actions]
-
-            if column_complete and row_complete:
-
-                actions = ["Do you want to know it is correct or not?",
-                           "I can show you one correct answer on the board.",
-                           "That is so good",
-                           "I can see that you are doing well."]
-                actions = ["It seems you completed a row and column. " + action for action in actions]
-
-            self.behaviour_selected_rule2 = True
-            self.action_type = self.action_types.DRULE2
-
+#        if not self.domain_excuted_rule2:
+#            def compare(position, size, board, solution):
+#                """
+#                Given a position, this function compares the whether the row and the column of this position are the same as
+#                solution's
+#                :param solution:
+#                :return:
+#                """
+#                w, h = size
+#                x, y = position
+#
+#                check_row = True
+#                for i in xrange(h):
+#                    check_row = (board[x][i] == solution[x][i] and check_row)
+#
+#                check_cloumn = True
+#                for j in xrange(w):
+#                    check_cloumn = (board[j][y] == solution[j][y] and check_cloumn)
+#
+#                return check_cloumn, check_row
+#
+#            position = positions[-1]
+#            column_complete, row_complete = compare(position, size,current_board, solution)
+#            print column_complete, row_complete
+#            if column_complete:
+#
+#                actions = ["Do you want to know it is correct or not?",
+#                           "I can show you one correct answer on the board."
+#                           "That is great !",
+#                           "I can see that you are doing well."]
+#                actions = ["It seems you completed a column. " + action for action in actions]
+#
+#            if row_complete:
+#
+#                actions = ["Do you want to know it is correct or not?",
+#                           "I can show you one correct answer on the board.",
+#                           "That is great ! ",
+#                           "I can see that you are doing well."]
+#                actions = ["You completed a row. " + action for action in actions]
+#
+#            if column_complete and row_complete:
+#
+#                actions = ["Do you want to know it is correct or not?",
+#                           "I can show you one correct answer on the board.",
+#                           "That is so good",
+#                           "I can see that you are doing well."]
+#                actions = ["It seems you completed a row and column. " + action for action in actions]
+#
+#            self.behaviour_selected_rule2 = True
+#            self.action_type = self.action_types.DRULE2
+#
 
 
 

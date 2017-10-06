@@ -7,6 +7,8 @@
     <Dialogs />
     <Resources>
         <File name="demo" src="html/images/demo.png" />
+        <File name="choice_sentences" src="behavior_1/Aldebaran/choice_sentences.xml" />
+        <File name="strategy1" src="html/images/strategy1.png" />
     </Resources>
     <Topics />
     <IgnoredPaths>

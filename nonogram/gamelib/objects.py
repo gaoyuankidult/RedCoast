@@ -271,7 +271,6 @@ class Tablero:
                 positionx = positiony = -1
 
             # send information to robot.
-
             if (positionx < self.columnas and positionx >= 0) and (positiony < self.filas and positiony >= 0): # if the position is not out of boundary
                 if self.celdas[positiony][positionx] == RELLENO or self.celdas[positiony][positionx] == EQUIS: # after selection, if the position is filled in with block or cross
                     if boton[0]:
@@ -289,7 +288,7 @@ class Tablero:
                 print self.socket.recv()
 
                 # send position and click information
-                self.socket.send_json([positionx, positiony, click])
+                self.socket.send_json([positiony, positionx, click])
                 print self.socket.recv()
 
 

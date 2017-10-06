@@ -17,6 +17,8 @@ from robot import RobotGesturesMixin
 from robot import RobotVisionMixin
 from robot import RobotPostureMixin
 
+import qi
+
 
 class Robot(threading.Thread,
             RobotSpeechMixin,
@@ -27,7 +29,6 @@ class Robot(threading.Thread,
             RobotPostureMixin):
 
     def __init__(self, ip, port, joystick_id):
-
         def rfun(action):
             """ implementation of reward function
 
@@ -46,7 +47,13 @@ class Robot(threading.Thread,
         self.port = port
         self.joystick_id = joystick_id
 
-        self.memory = ALProxy("ALMemory", self.ip, self.port)
+        connection_url = "tcp://" + self.ip + ":" + str(self.port)
+        self.app = qi.Application(["NonogramTeacher", "--qi-url=" + connection_url])
+        self.app.start()
+        self.session = self.app.session
+        
+        #self.memory = ALProxy("ALMemory", self.ip, self.port)
+        self.memory = self.session.service("ALMemory")
 
         self.speech_pitch = 100
         self.speech_speed = 100
@@ -65,17 +72,14 @@ class Robot(threading.Thread,
         self.experiment = RobotNanogramExperiment(robot=self)
         self.algorithm = Exp3(4, 0.1, self.experiment, debug=1)
 
-
         context = zmq.Context()
         self.socket = context.socket(zmq.REP)
         self.socket.bind("tcp://*:%s" % "5556")
-
+        
     def run(self):
         niter = 50
+        
         self.algorithm.run(niter)
-
-
-
 
 if __name__ == "__main__":
     import sys

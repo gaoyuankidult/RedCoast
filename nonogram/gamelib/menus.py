@@ -30,16 +30,16 @@ def dibujar_menu(screen):
     screen.blit(fuente.render("PygameCross 0.0.5", True, (0, 0, 0)), (10, 10))
     screen.blit(fuente2.render("- Select the size:", True, (0, 0, 0)), (10, 70))
     
-    screen.blit(fuente2.render("5x5", True, (0, 0, 0)), (90, 110))
+    screen.blit(fuente2.render("7x7", True, (0, 0, 0)), (90, 110))
     pygame.draw.rect(screen, (0, 0, 0), (50, 110, 20, 20), 2)
-    screen.blit(fuente2.render("10x10", True, (0, 0, 0)), (90, 140))
+    screen.blit(fuente2.render("8x8", True, (0, 0, 0)), (90, 140))
     pygame.draw.rect(screen, (0, 0, 0), (50, 140, 20, 20), 2)
-    screen.blit(fuente2.render("14x11", True, (0, 0, 0)), (90, 170))
+    screen.blit(fuente2.render("10x10", True, (0, 0, 0)), (90, 170))
     pygame.draw.rect(screen, (0, 0, 0), (50, 170, 20, 20), 2)
-    screen.blit(fuente2.render("15x15", True, (0, 0, 0)), (90, 200))
-    pygame.draw.rect(screen, (0, 0, 0), (50, 200, 20, 20), 2)
-    screen.blit(fuente2.render("20x20", True, (0, 0, 0)), (90, 230))
-    pygame.draw.rect(screen, (0, 0, 0), (50, 230, 20, 20), 2)
+    #screen.blit(fuente2.render("15x15", True, (0, 0, 0)), (90, 200))
+    #pygame.draw.rect(screen, (0, 0, 0), (50, 200, 20, 20), 2)
+    #screen.blit(fuente2.render("20x20", True, (0, 0, 0)), (90, 230))
+    #pygame.draw.rect(screen, (0, 0, 0), (50, 230, 20, 20), 2)
     
     screen.blit(fuente2.render("- Instructions:", True, (0, 0, 0)), (10, 280))
     screen.blit(fuente2.render("Left-Click", True, (0, 0, 0)), (90, 320))
@@ -69,13 +69,13 @@ def actualizar_menu():
         res += '15x15.txt'
         menu = False
     if boton[0] and x >= 50 and x <= 70 and y >= 170 and y <= 190:
-        res += '14x11.txt'
-        menu = False
-    if boton[0] and x >= 50 and x <= 70 and y >= 140 and y <= 160:
         res += '10x10.txt'
         menu = False
+    if boton[0] and x >= 50 and x <= 70 and y >= 140 and y <= 160:
+        res += '08x08.txt'
+        menu = False
     if boton[0] and x >= 50 and x <= 70 and y >= 110 and y <= 130:
-        res += '05x05.txt'
+        res += '07x07.txt'
         menu = False
     
     return menu, res

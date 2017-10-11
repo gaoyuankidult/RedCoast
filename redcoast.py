@@ -77,7 +77,7 @@ class Robot(threading.Thread,
         self.socket.bind("tcp://*:%s" % "5556")
         
     def run(self):
-        niter = 50
+        niter = 1000
         
         self.algorithm.run(niter)
 

@@ -1,9 +1,10 @@
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 class Exp3(object):
 
-    def __init__(self, K, gamma, exp, debug=0):
+    def __init__(self, K, gamma, exp, debug=1):
         """ Implementation of exp3 algorithm.
 
         :param K: number of possible actions.
@@ -17,29 +18,33 @@ class Exp3(object):
         self.gamma = gamma
         self.W = np.ones([K])
         self.exp = exp
+        self.learning_rate = 2
         self.debug = debug
         self.p = np.ones([K])
         if self.debug:
             self.log = self.p
+        
 
     def update(self):
         self.p = (1 - self.gamma) * self.W / self.W.sum() + self.gamma / self.K
         action = np.random.choice(xrange(self.K),p=self.p)
-        reward = self.exp.rfun(action)
+        reward = self.exp.rfun(action, self.observation) * self.learning_rate
         assert reward is not None, "Reward received from experiment %s is None."%str(self.exp)
         reward_hat = reward/self.p[action]
         self.W[action] = self.W[action] * np.exp(self.gamma * reward_hat / self.K)
 
     def run(self, niter):
+        self.observation = False
         for i in xrange(niter):
-            self.update()
-            if self.debug == 1:
-                self.log = np.vstack((self.log, self.p))
+            if self.observation == False:
+                self.update()
+                if self.debug == 1:
+                    self.log = np.vstack((self.log, self.p))
 
-                print "New iteration..."
-                for i in xrange(self.K):
-                    print self.log[:, i]
-                #plt.ylabel("Iteration Number")
-                #plt.xlabel("Exploration Rate")
-                #plt.legend()
-                #plt.savefig("exp3_algorithm.png")
+                    print "New iteration..."
+                    for i in xrange(self.K):
+                        print self.log[:, i]
+                    plt.ylabel("Iteration Number")
+                    plt.xlabel("Exploration Rate")
+                    plt.legend()
+                    plt.savefig("exp3_algorithm.png")

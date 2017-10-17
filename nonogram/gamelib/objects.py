@@ -40,7 +40,8 @@ class Tablero:
         abre = aux = False
         self.titulo = ''
         count = 50
-        
+
+        print linea
         self.archivo = open(os.path.join('nonogram/size', archivo))
         for line in self.archivo:
             self.conf.append(line)
@@ -63,7 +64,34 @@ class Tablero:
                         aux = True
             count += 30
         self.archivo.close()
-                
+        
+        # modify the original code here
+        # if the random 
+        # self.archivo = open(os.path.join('nonogram/size', archivo))
+        # num_line = 
+        # for line in self.archivo:
+        #     self.conf.append(line)
+        #     if count == linea:
+        #         for e in line:
+        #             if e == "[":
+        #                 abre = True
+        #             if e == "]":
+        #                 for i in cadena.split(","):
+        #                     lista.append(int(i))
+        #                 self.sol.append(lista)
+        #                 lista = []
+        #                 abre = False
+        #                 cadena = ''
+        #             if abre and e != "[":
+        #                 cadena = cadena + e
+        #             if e != ":" and not aux:
+        #                 self.titulo = self.titulo + e
+        #             if e == ":":
+        #                 aux = True
+        #     count += 30
+
+
+
         self.celdas = self.crear_celdas(num_fil, num_col, VACIO)
         self.tipos = self.agregar_tipos()
         self.columnas = num_col

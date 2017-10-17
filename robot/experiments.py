@@ -5,6 +5,7 @@ import json
 import sys
 import random
 import copy
+from datetime import datetime
 
 pygame.init()
 
@@ -180,6 +181,7 @@ class NanogramProcess(RobotExperiment):
         """
         super(NanogramProcess, self).__init__(robot)
         self.start_time = time.time()
+        self.start_readable_time = str(datetime.now())
         self.current_time = time.time()
         self.end_time = time.time()
 
@@ -192,6 +194,7 @@ class NanogramProcess(RobotExperiment):
                                         "behaviours":[],
                                         "evaluations":[],
                                         "times":[self.start_time],
+                                        "readable_times":[self.start_readable_time],
                                         "behaviour_times":[self.start_time],
                                         "clicks":[]}}
 
@@ -235,8 +238,9 @@ class NanogramProcess(RobotExperiment):
         self.action_types = ActionType()
         self.final_selected = self.action_types.NOTSELECTED
 
-        # Start the instruction process
-        self.instruct_begin()
+    def set_mode(self, value):
+        self.robot.memory.insertData("Mode", value)
+
 
 
     def instruct_begin(self):
@@ -261,13 +265,13 @@ class NanogramProcess(RobotExperiment):
         else:
             return False
         
-    def _show_number_cells(self, current_board):
+    def _show_number_cells(self, current_board, solution):
         size = self.info["game"]["size"]
         w, h = size
         count = 0 
         for i in xrange(w):
             for j in xrange(h):
-                if current_board[i][j] == 1:
+                if solution[i][j] == 1 and not current_board[i][j] == 1:
                     count += 1
         self.robot.say("You still need to fill in %d cells."%count)
     
@@ -328,7 +332,8 @@ class NanogramProcess(RobotExperiment):
 
         def show_number_cells():
             current_board = self.info["game"]["current_board"]
-            self._show_number_cells(current_board)
+            solution= self.info["game"]["solution"]
+            self._show_number_cells(current_board, solution)
             self.reward = 2.0
         
         def detect_correctness():
@@ -528,13 +533,13 @@ class NanogramProcess(RobotExperiment):
                 self.action_type = self.action_types.RULE1
 
         #Rule two ( when user completed a row or a cloumn)
-        if not self.forbid_rule2 and not self.action_lock and not self.info["game"]["clicks"] == 1:  # last click is not right click
+        if not self.forbid_rule2 and not self.action_lock and not self.info["game"]["clicks"][-1] == 1:  # last click is not right click
             position = positions[-1]
             column_complete, row_complete = compare(position, size, current_board, solution)
 
             if (column_complete or row_complete) and self.rule2_skip == 0:
                                         
-                all_actions = [[" I can tell you how many cells you still need to fill. Do you wan to know?", # balanced
+                all_actions = [[" I can tell you how many cells you still need to fill. Do you want to know?", # balanced
                                 " If you want, I can show you one correct answer on the board.",   # balanced 
                                 " That was a skillful move.",
                                 " It was nicely done."],
@@ -574,6 +579,22 @@ class NanogramProcess(RobotExperiment):
             elif (column_complete or row_complete) and self.rule2_skip > 0 :
                 self.rule2_skip -= 1
 
+        #Added for debugging
+        all_actions = [[" I can tell you how many cells you still need to fill. Do you want to know?", # balanced
+                                " If you want, I can show you one correct answer on the board.",   # balanced 
+                                " That was a skillful move.",
+                                " It was nicely done."],
+                               [" Would you like to know how many cells you need to fill in this game?",
+                                " Would you like me to show you one correct answer on the board as a celebration?",
+                                " I really think you have the knowledge to complete the game.",
+                                " I am really happy for you."],
+                               [" Do you want to know how many cells you still need to fill?",
+                                " Maybe I can show you one correct answer on the board?",
+                                " I think you have mastered some skills that I do not know.",
+                                " You have been doing really well."]]
+        behaviour_class = 1
+
+                
         #Rule three (not implemented. it is something related to techniques)
         print actions
         if actions is not None:
@@ -583,6 +604,140 @@ class NanogramProcess(RobotExperiment):
             
         return action_excuted
 
+
+
+    def idel_interaction(self):
+        received = self.robot.socket.recv()
+        try:
+            # receive current board information
+            solution, current_board, previous_board = json.loads(received)
+            self.robot.socket.send("board_information_received")
+            self.info["game"]["current_board"] = current_board
+            self.info["game"]["solution"] = solution
+            self.info["game"]["previous_board"] = previous_board
+
+            # receive current positions
+            received = self.robot.socket.recv_json()
+            positiony, positionx, click = received
+            if isinstance(positionx,float):
+                positionx = int(positionx)
+            if isinstance(positiony,float):
+                positiony = int(positiony)
+            self.robot.socket.send("positions_received")
+
+            # receive interaction information
+            self.info["game"]["positions"].append([positiony, positionx])
+            self.info["game"]["clicks"].append(click)
+            self.info["game"]["times"].append(time.time())
+            self.info["game"]["readable_times"].append(str(datetime.now()))
+
+            self.solution = self.info["game"]["solution"]
+            self.board = self.info["game"]["current_board"]
+            self.previous_board = self.info["game"]["previous_board"]
+            FILLED = 1 # board is filled with black
+            CROSS = 2 # board is filled with cross
+
+
+            # user behaviour codes three user actions
+            # 1: user made a selection
+            # 2: user made an exclusion
+            # 3: user made cancelled a selection
+            # 4: user cancelled an exclusion
+            user_behaviour = 0
+
+            # evaluation result codes two states
+            # 1: user's last action matches with the solution
+            # 2: user's last action does not match the solution
+            evaluation_result = 0
+
+            if self.board[positiony][positionx] == FILLED or self.board[positiony][
+                positionx] == CROSS:  # after selection, if the position is filled in with block or cross
+ 
+                if click == 0:
+                    user_behaviour = 1
+                    if self.solution[positiony][positionx] == self.board[positiony][positionx]:
+                        #self.robot.say("User made a good selection.")
+                        evaluation_result = 1
+                    else:
+                        #self.robot.say( "User made a bad selection.")
+                        evaluation_result = 2
+
+                if click == 1:
+                    user_behaviour = 2
+                    print "User thinks this position can be excluded."
+                    if self.solution[positiony][positionx] + 2 == self.board[positiony][positionx]:  # cross matches empty in solution
+                        #self.robot.say( "User made a good exclusion.")
+                        evaluation_result = 1
+                    else:
+                        #self.robot.say("User made a bad exclusion.")
+                        evaluation_result = 2
+
+            else:
+                print "User thinks the position is a mistake."
+                if click == 0:
+                    print "User used left click to cancel."
+                    if self.previous_board[positiony][positionx] == FILLED:
+                        #self.robot.say( "User thinks this was a selection mistake")
+                        user_behaviour = 3
+
+                        if self.solution[positiony][positionx] == self.board[positiony][positionx]:
+                            #self.robot.say("And he is right.")
+                            evaluation_result = 1
+                        else:
+                            #self.robot.say( "But he is wrong.")
+                            evaluation_result = 2
+
+                    if self.previous_board[positiony][positionx] == CROSS:
+                        #self.robot.say( "User thinks this was an exclusion mistake")
+                        user_behaviour = 4
+
+                        if self.solution[positiony][positionx] + 2 == self.board[positiony][
+                            positionx]:  # cross matches empty in solution
+                            #self.robot.say("But he is wrong.")
+                            evaluation_result = 1
+                        else:
+                            #self.robot.say("And he is right.")
+                            evaluation_result = 2
+
+
+                if click == 1:
+                    print "User used right click to cancel."
+                    if self.previous_board[positiony][positionx] == FILLED:
+                        #self.robot.say("User thinks this was a selection mistake")
+
+                        if self.solution[positiony][positionx] == self.board[positiony][positionx]:
+                            #self.robot.say("But he is wrong.")
+                            evaluation_result = 1
+
+                        else:
+                            #self.robot.say("And he is right.")
+                            evaluation_result = 2
+
+                    if self.previous_board[positiony][positionx] == CROSS:
+                        #self.robot.say("User thinks this was a exclusion mistake")
+                        if self.solution[positiony][positionx] + 2 == self.board[positiony][
+                            positionx]:  # cross matches empty in solution
+                            #self.robot.say("But he is wrong.")
+
+                            # we do not consider removing exclusion is mistake
+                            evaluation_result = 2
+                        else:
+                            #self.robot.say("And he is right.")
+                            evaluation_result = 2
+            
+            self.info["game"]["behaviours"].append(user_behaviour)
+            self.info["game"]["evaluations"].append(evaluation_result)
+
+            return self.game_finished, True
+        except Exception:
+            print sys.exc_info()
+            print "received",received
+
+            if type(received) != list and received.startswith("game_finished"):
+                self.robot.socket.send("game_finished_confirmed")
+                self.game_finished = True
+            return self.game_finished, True
+        
     def interaction(self, behaviour_class):
         # one time interaction
         received = self.robot.socket.recv()
@@ -607,7 +762,8 @@ class NanogramProcess(RobotExperiment):
             self.info["game"]["positions"].append([positiony, positionx])
             self.info["game"]["clicks"].append(click)
             self.info["game"]["times"].append(time.time())
-
+            self.info["game"]["readable_times"].append(str(datetime.now()))
+            
             self.solution = self.info["game"]["solution"]
             self.board = self.info["game"]["current_board"]
             self.previous_board = self.info["game"]["previous_board"]
@@ -705,11 +861,8 @@ class NanogramProcess(RobotExperiment):
             self.info["game"]["behaviours"].append(user_behaviour)
             self.info["game"]["evaluations"].append(evaluation_result)
 
-            if self.observation == True:
-                return self.game_finished, True
-            else:
-                return self.game_finished, self.strategy_evaluation(behaviour_class)
-
+            return self.game_finished, self.strategy_evaluation(behaviour_class)
+            
         except Exception:
             print sys.exc_info()
             print "received",received
@@ -717,13 +870,17 @@ class NanogramProcess(RobotExperiment):
             if type(received) != list and received.startswith("game_finished"):
                 self.robot.socket.send("game_finished_confirmed")
                 self.game_finished = True
-
+                
             #self.robot.say("The action you just did is at position x=%d, y=%d" % (positionx, positiony))
             return self.game_finished, True
         #self.get_reward()
 
-    def run(self, action):
-        return self.interaction(action)
+    def run(self, action, mode):
+        self.mode = mode
+        if self.mode == 2:
+            return self.interaction(action)
+        else:
+            return self.idel_interaction()
 
 
 
@@ -734,18 +891,26 @@ class RobotNanogramExperiment(RobotExperiment):
         self.robot.adjust_speech_parameters(pitch=100, speed=90)
         self.process = NanogramProcess(robot)
         self.game_start = True
+        self.game_start_time = 0.0
+        self.game_end_time = 0.0
+        self.process.info["game"]["game_times"] = []
+        self.previous_clicks = 0
+        self.game_finished_times = 0
 
-
-    def rfun(self, action, observation):
-        self.out = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    def rfun(self, action, mode, id):
+        self.mode = mode
         self.process.reward = 0.0
+        self.id = id
         #self.robot.load_topic("dialogs/interaction.top")
         #self.robot.dialog.subscribe('ExperimentModule')
-        self.process.observation = observation
+        if len(self.process.info["game"]["clicks"]) - self.previous_clicks == 1:
+            self.game_start_time = time.time()
+
+        
 
 
         if self.game_start  == True:
-        # receive size information
+            # receive size information
             received = self.robot.socket.recv()
             self.process.info["game"]["size"]= map(lambda x: int(x), received.split(','))
             self.robot.socket.send("size" + "_received")
@@ -756,22 +921,81 @@ class RobotNanogramExperiment(RobotExperiment):
             self.robot.socket.send("config" + "_received")
             self.game_start = False
 
-        while self.out[6] == 0 and self.out[7] == 0 and self.out[8] == 0 and self.out[9] == 0:
+        if self.mode == 1 or self.mode == 3:
+            learning = False
+        elif self.mode == 2:
+            learning = True
+            
+        ends = [" Congratulations!", " That was an awesome run.", " Great, I see that you enjoyed it.", " Good work.", " Nicely done."]
+        while not learning:
             pygame.event.pump()
-            # if action is completed, the loop will be broken
-            game_finished, action_completed = self.process.run(action)
+            game_finished, action_completed = self.process.run(action, self.mode)
             if game_finished:
                 self.game_start = True
                 self.process.game_finished = False
-                ends = [" Congratulations!", "That was an awesome run.", "Great, I see that you enjoyed it."]
+
                 end = random.sample(ends,1)[0]
-                self.robot.say("The game is finished." + end)
+                if self.game_finished_times <= 1:
+                    self.robot.say("The game is finished." + end + " Please continue with game %d."%((self.mode-1) * 3 + self.game_finished_times + 2))
+
+                self.game_finished_times += 1
+                
                 print self.process.info["game"]["positions"]
                 print self.process.info["game"]["clicks"]
                 print self.process.info["game"]["times"]
                 print self.process.info["game"]["behaviours"]
                 print self.process.info["game"]["evaluations"]
+
+                self.game_end_time = time.time()
+                self.process.info["game"]["game_times"].append(self.game_end_time - self.game_start_time)
+                self.game_start_time = 0.0
+                self.previous_clicks = len(self.process.info["game"]["clicks"])
+                print "game time", self.process.info["game"]["game_times"]
+                with open("data/ID:%d_Mode:%d.json"%(self.id, self.mode),'w') as outfile:
+                          json.dump(self.process.info["game"], outfile)
+                
+            print action_completed
             if action_completed == True:
                  break
+
+        while learning:
+            pygame.event.pump()
+            # if action is completed, the loop will be broken
+            game_finished, action_completed = self.process.run(action, self.mode)
+            if game_finished:
+                self.game_start = True
+                self.process.game_finished = False
+                end = random.sample(ends,1)[0]
+                
+                if self.game_finished_times <= 1:
+                    self.robot.say("The game is finished." + end + " Please continue with game %d."%((self.mode-1) * 3 + self.game_finished_times + 2))
+
+                
+                print self.process.info["game"]["positions"]
+                print self.process.info["game"]["clicks"]
+                print self.process.info["game"]["times"]
+                print self.process.info["game"]["behaviours"]
+                print self.process.info["game"]["evaluations"]
+
+                self.game_finished_times += 1
+                
+                self.game_end_time = time.time()
+                self.process.info["game"]["game_times"].append(self.game_end_time - self.game_start_time)
+                self.game_start_time = 0.0
+                self.previous_clicks = len(self.process.info["game"]["clicks"])
+                print "game time", self.process.info["game"]["game_times"]
+
+                with open("data/ID:%d_Mode:%d.json"%(self.id, self.mode),'w') as outfile:
+                    json.dump(self.process.info["game"], outfile)
+            if action_completed == True:
+                break
+            
+        if self.game_finished_times == 3:
+
+            self.robot.say("%s."%{1:"You completed the first session. Alex, come in please",
+                                  2:"Nice work you did here. Later you will have another session.",
+                                  3:"Now, you have done the last session. Thanks a lot! Alex, please come in."}[self.mode])
+            self.game_finished_times = 0
+             
         return self.process.reward
 

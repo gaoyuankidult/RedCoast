@@ -285,7 +285,6 @@ class Tablero:
             positionx = (x / self.tipos[0].get_width()) - 19
             positiony = (y / self.tipos[0].get_width()) - 9
 
-
             if (positionx < self.columnas and positionx >= 0) and (positiony < self.filas and positiony >= 0):
                 if self.celdas[positiony][positionx] == RELLENO or self.celdas[positiony][positionx] == EQUIS:
                     self.celdas[positiony][positionx] = VACIO
@@ -333,6 +332,21 @@ class Tablero:
 
                 else:
                     res = False
+                    
+        # Set an additional conditional for Game 3
+        if self.titulo == "Game 3" and res == False:
+            print "Entered."
+            sol = [[1,1,1,1,0,0,1][1,1,1,1,1,0,0][0,1,0,1,1,1,1][1,0,1,1,1,1,1][0,0,1,0,1,1,0][0,1,0,0,0,0,1][1,0,0,0,1,1,0]]
+            for i in xrange(self.filas):
+                for j in xrange(self.columnas):
+                    if (sol[i][j] == self.celdas[i][j] or sol[i][j] + 2 == self.celdas[i][j]) and res:
+                        res = True
+                    else:
+                        res = False
+            
+        
+
+        
         if res == True:
             self.socket.send("game_finished")
             print self.socket.recv()

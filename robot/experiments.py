@@ -258,14 +258,47 @@ class NanogramProcess(RobotExperiment):
     def instruct_game(self):
         self.robot.memory.raiseEvent("InstructBegin", 1)
 
-    def _test_correct_answer(self,position, current_board, solution):
+    def _rule2_supportive_action(self, n):
+        x = random.sample([1,2],1)[0]
+        if x == 1:
+            return self._show_number_cells(n)
+        elif x == 2:
+            return self._say_completed()
+        
+        return 
+    def _test_correct_answer(self):
+        current_position = self.info["game"]["positions"][-1]
+        current_board = self.info["game"]["current_board"]
+        solution = self.info["game"]["solution"]
+
         i, j = position
         if current_board[i][j] == solution[i][j]:
-            return True
+            return "Previous answer is correct."
         else:
-            return False
+            return "Previous answer is not correct."
         
-    def _show_number_cells(self, current_board, solution):
+    def _say_completed(self):
+        population = {}
+        if self.row_complete:
+            population[0] = "a row" # code row_complete as 0
+        if self.column_complete:
+            population[1] = "a column" # code column_complete as 1
+        if self.column_complete and self.row_complete:
+            population[2] = "both row and column" # code column_complete as 1
+        sample = random.sample(population.keys(),1)
+
+        interjections = ["Cool,", "Nice,", "Great,", "Good,"]
+        interjection = random.sample(interjections, 1)[0]
+
+        statements = [interjection + "you completed %s."%population[sample[0]], interjection + "%s completed,"%population[sample[0]], ""]
+        statement = random.sample(statements, 1)[0]
+
+        return statement
+    
+    def _show_number_cells(self, n):
+        current_board = self.info["game"]["current_board"]
+        solution= self.info["game"]["solution"]
+        
         size = self.info["game"]["size"]
         w, h = size
         count = 0 
@@ -273,9 +306,11 @@ class NanogramProcess(RobotExperiment):
             for j in xrange(h):
                 if solution[i][j] == 1 and not current_board[i][j] == 1:
                     count += 1
-        self.robot.say("You still need to fill in %d cells."%count)
+        return {1: " Em, as far as I know, you still need to fill in %d cells."%count,
+                2: " According to what you have on the board, in total, you still have %d cells to fill."%count,
+                3: " Well, I think, there are still %d cells to fill."%count}[n]
     
-    def _show_correct_answer(self):
+    def _show_correct_answer(self, n):
 
         """
         Give the current board and solution, returns an action that is correct.
@@ -291,76 +326,49 @@ class NanogramProcess(RobotExperiment):
         population = []
         for c in positions:
             i, j = c
-            if current_board[i][j] != solution[i][j]:
+            if current_board[i][j] != solution[i][j] and solution[i][j] == 1:
                 population.append([i,j])
         sample = random.sample(population, 1)
         row, column = sample[0]
-        instruct = "Great ! You can fill in the %d'th row and %d'th column"%(row+1, column+1)
-        self.robot.say(instruct)
-        #TODO debug
+        smap = {1:"first", 2:"second", 3: "third", 4: "fourth", 5:"fifth", 6:"sixth", 7:"seventh"}
+        instruct = {1: " I found a good move. You may want to fill %s row and %s column."%(smap[row+1], smap[column+1]),
+                    2: " You may want to fill in %s row and %s column. It is a correct answer."%(smap[row+1], smap[column+1]),
+                    3: " I think I can help you to spot a correct answer, you may want to fill in %s row and %s column."%(smap[row+1], smap[column+1])}[n]
+        return instruct
 
     def _on_rule1_answered(self, value):
         def ignored():
-            print "ignored"
-            self.reward = -1.0
+            self.reward = -2.0
             
-        def idel():
+        def answered():
             self.reward = 2.0
-            pass
-        def show_correct_answer():
-            self.reward = 2.0
-            self._show_correct_answer()
-        
+
         def switch(value):
             value = int(value)
             return {
                 0:ignored,
-                1:idel,
-                2:show_correct_answer,
-                3:idel,
-                4:idel}[value]()
+                1:answered,
+                2:answered,
+                3:answered,
+                4:answered}[value]()
 
         self.rule1_replied = True
         switch(value)
 
     def _on_rule2_answered(self, value):
         def ignored():
-            self.reward = -1.0
-        def idel():
-            self.reward = 2.0
-            pass
+            self.reward = -2.0
 
-        def show_number_cells():
-            current_board = self.info["game"]["current_board"]
-            solution= self.info["game"]["solution"]
-            self._show_number_cells(current_board, solution)
+        def answered():
             self.reward = 2.0
-        
-        def detect_correctness():
-            self.reward = 2.0
-            current_position = self.info["game"]["positions"][-1]
-            current_board = self.info["game"]["current_board"]
-            solution = self.info["game"]["solution"]
-            
-            if self._test_correct_answer(current_position, current_board, solution):
-                self.robot.say("The previous answer is correct")
-            else:
-                self.robot.say("The previous answer is incorrect")
-            
-
-        def show_correct_answer():
-            self.reward = 2.0
-            self._show_correct_answer()
-
-        
 
         def switch(value):
             value = int(value)
             return {0:ignored,
-                    1:show_number_cells,
-                    2:show_correct_answer,
-                    3:idel,
-                    4:idel}[value]()
+                    1:answered,
+                    2:answered,
+                    3:answered,
+                    4:answered}[value]()
 
         switch(value)
         self.rule2_replied = True
@@ -396,7 +404,6 @@ class NanogramProcess(RobotExperiment):
         # continue if one of the rules is answered
         while (not self.rule1_replied) and (not self.rule2_replied) and (not self.rule3_replied):
             time.sleep(1)
-            print "wait for reply"
             print self.reward
         self.rule1_replied = False
         self.rule2_replied = False
@@ -508,21 +515,20 @@ class NanogramProcess(RobotExperiment):
         # Rule one ( waited long time with an incorrect answer)
         print "waited long", self.waited_long, times[-1] - times[-2], t1, count, "evaluation",last_evaluation(), eval.incorrect
         if self.waited_long and last_evaluation() == eval.incorrect and not self.action_lock:
-                all_actions = [[" Do you need to hear some strategy about this game?",
-                                " If you feel puzzled, I can complete next move for you.",
-                                " This step is hard, please do not worry",
+                all_actions = [[self._rule2_supportive_action(1),   # balanced 
+                                self._show_correct_answer(1), # balanced
+                                " This step is hard, please do not worry.",
                                 " I am here for you."],
-                               [" I have some strategies of this game, maybe you want to heal about it?",
-                                " If you are not sure, I will do next step for you.",
+                               [self._rule2_supportive_action(2),
+                                self._show_correct_answer(2),
                                 " This game is more difficult than averange, take your time.",
                                 " Remember that I will help if I see there is some problem."],
-                               [" I can teach you some skills, would you like to hear one ?",
-                                " I can show you a correct move, would you like to hear about it?",
+                               [self._rule2_supportive_action(3),
+                                self._show_correct_answer(3),
                                 " I think I accidentally chose a difficult game for you. Take your time.",
                                 " I will do my best to support you." ]
                 ]
-
-
+            
                 beginnings = ["Is there any thing that troubles you?", "That was a difficult move,", "Last action took you some time"]
                 beginning = random.sample(beginnings,1)[0]
                 
@@ -536,41 +542,29 @@ class NanogramProcess(RobotExperiment):
         if not self.forbid_rule2 and not self.action_lock and not self.info["game"]["clicks"][-1] == 1:  # last click is not right click
             position = positions[-1]
             column_complete, row_complete = compare(position, size, current_board, solution)
+            self.column_complete = column_complete
+            self.row_complete = row_complete
 
             if (column_complete or row_complete) and self.rule2_skip == 0:
                                         
-                all_actions = [[" I can tell you how many cells you still need to fill. Do you want to know?", # balanced
-                                " If you want, I can show you one correct answer on the board.",   # balanced 
+                all_actions = [[self._rule2_supportive_action(1),   # balanced 
+                                self._show_correct_answer(1), # balanced
                                 " That was a skillful move.",
                                 " It was nicely done."],
-                               [" Would you like to know how many cells you need to fill in this game?",
-                                " Would you like me to show you one correct answer on the board as a celebration?",
+                               [self._rule2_supportive_action(2),
+                                self._show_correct_answer(2),
                                 " I really think you have the knowledge to complete the game.",
                                 " I am really happy for you."],
-                               [" Do you want to know how many cells you still need to fill?",
-                                " Maybe I can show you one correct answer on the board?",
+                               [self._rule2_supportive_action(3),
+                                self._show_correct_answer(3),
                                 " I think you have mastered some skills that I do not know.",
                                 " You have been doing really well."]
                 ]
 
                 #if user completed an action check whether user completed row, column or both
-                population = {}
-                if row_complete:
-                    population[0] = "a row" # code row_complete as 0
-                if column_complete:
-                    population[1] = "a column" # code column_complete as 1
-                if column_complete and row_complete:
-                    population[2] = "both row and column" # code column_complete as 1
-                sample = random.sample(population.keys(),1)
-
-                interjections = ["Cool,", "Nice,", "Great,", "Good,",""]
-                interjection = random.sample(interjections, 1)[0]
-
-                statements = ["you completed %s."%population[sample[0]], "%s completed,"%population[sample[0]], ""]
-                statement = random.sample(statements, 1)[0]
 
                 actions = random.sample(all_actions, 1)[0]
-                actions = [interjection + statement + action for action in actions] 
+                actions = [action for action in actions] 
                 self.rule2_selected = True
                 self.action_type = self.action_types.RULE2
 
@@ -579,22 +573,6 @@ class NanogramProcess(RobotExperiment):
             elif (column_complete or row_complete) and self.rule2_skip > 0 :
                 self.rule2_skip -= 1
 
-        #Added for debugging
-        all_actions = [[" I can tell you how many cells you still need to fill. Do you want to know?", # balanced
-                                " If you want, I can show you one correct answer on the board.",   # balanced 
-                                " That was a skillful move.",
-                                " It was nicely done."],
-                               [" Would you like to know how many cells you need to fill in this game?",
-                                " Would you like me to show you one correct answer on the board as a celebration?",
-                                " I really think you have the knowledge to complete the game.",
-                                " I am really happy for you."],
-                               [" Do you want to know how many cells you still need to fill?",
-                                " Maybe I can show you one correct answer on the board?",
-                                " I think you have mastered some skills that I do not know.",
-                                " You have been doing really well."]]
-        behaviour_class = 1
-
-                
         #Rule three (not implemented. it is something related to techniques)
         print actions
         if actions is not None:
@@ -860,7 +838,7 @@ class NanogramProcess(RobotExperiment):
                             evaluation_result = 2
             self.info["game"]["behaviours"].append(user_behaviour)
             self.info["game"]["evaluations"].append(evaluation_result)
-
+            
             return self.game_finished, self.strategy_evaluation(behaviour_class)
             
         except Exception:

@@ -17,14 +17,14 @@ class Exp3(object):
         self.gamma = gamma
         self.W = np.ones([K])
         self.exp = exp
-        self.learning_rate = 2.8
+        self.learning_rate = 0.0
         self.debug = debug
         self.p = np.ones([K])
         if self.debug:
             self.log = self.p
 
-        self.id = 1
-        self.mode = 2
+        self.id = 0
+        self.mode = 1
         # mode 1 maps to pre session
         # mode 2 maps to session
         # mode 3 maps tp post session
@@ -65,7 +65,7 @@ class Exp3(object):
                 plt.ylabel("Probability")
                 plt.xlabel("Iteration Number")
                 plt.legend()
-                plt.savefig("alg_ID:%d_Mode:%d.json.png")
+                plt.savefig("alg_ID:%d_Mode:%d.json.png"%(self.id, self.mode))
 
             else:
                 action = None

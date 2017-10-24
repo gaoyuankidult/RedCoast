@@ -9,6 +9,7 @@
         <File name="demo" src="html/images/demo.png" />
         <File name="choice_sentences" src="behavior_1/Aldebaran/choice_sentences.xml" />
         <File name="strategy1" src="html/images/strategy1.png" />
+        <File name="choice_sentences_light" src="behavior_1/Aldebaran/choice_sentences_light.xml" />
     </Resources>
     <Topics />
     <IgnoredPaths>
